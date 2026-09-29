@@ -48,6 +48,7 @@ button{font:inherit;color:inherit}
 :root,:root[data-theme="dark"]{--gate-hi:#0d1620}:root[data-theme="light"]{--gate-hi:#dde9f2}
 #gate .bar .r{display:flex;align-items:center;gap:14px}
 #stars3d{position:absolute;inset:0;width:100%;height:100%;display:block}
+#starTag{position:absolute;left:0;top:0;z-index:1;pointer-events:none;font:500 10.5px var(--mono);letter-spacing:.12em;color:var(--accent);margin:-22px 0 0 12px;white-space:nowrap;opacity:0;transition:opacity .3s}
 #gate .bar,#gate .gfoot{position:relative;z-index:2}
 #gate .bar{display:flex;justify-content:space-between;align-items:center;gap:16px;color:var(--muted)}
 #gate .gfoot{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:end}
@@ -317,10 +318,11 @@ footer a:hover{color:var(--fg)}
 
 /* ---------- music player: liquid-crystal deck ---------- */
 :root,:root[data-theme="dark"]{--lcd-bg:#07131a;--lcd-fg:#9be7ff;--lcd-glow:rgba(125,211,252,.6);--lcd-band:rgba(125,211,252,.07);--lcd-grid:rgba(0,0,0,.34)}
-:root[data-theme="light"]{--lcd-bg:#b7c3ac;--lcd-fg:#1b2a1d;--lcd-glow:transparent;--lcd-band:rgba(27,42,29,.07);--lcd-grid:rgba(0,0,0,.07)}
+:root[data-theme="light"]{--lcd-bg:#e3ecf2;--lcd-fg:#0369a1;--lcd-glow:rgba(2,132,199,.25);--lcd-band:rgba(2,132,199,.07);--lcd-grid:rgba(3,105,161,.06)}
 .player{position:fixed;right:16px;bottom:16px;z-index:60;width:300px;padding:11px 11px 9px;border-radius:18px;border:1px solid var(--line-2);background:var(--bg-2);box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.05);transform:translateY(140%);transition:transform .7s var(--ease)}
 .player.show{transform:none}
 .lcd{position:relative;border-radius:9px;background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--lcd-fg) 7%,var(--lcd-bg)),var(--lcd-bg) 70%);padding:9px 12px 8px;font-family:"VT323",ui-monospace,monospace;color:var(--lcd-fg);text-shadow:0 0 6px var(--lcd-glow);overflow:hidden;cursor:pointer;box-shadow:inset 0 2px 10px rgba(0,0,0,.45);user-select:none}
+:root[data-theme="light"] .lcd{box-shadow:inset 0 1px 6px rgba(3,105,161,.18),inset 0 0 0 1px rgba(3,105,161,.12)}
 .lcd::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,var(--lcd-grid) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,var(--lcd-grid) 0 1px,transparent 1px 3px)}
 .lcd:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .lcd .l1{display:flex;justify-content:space-between;font-size:18px;letter-spacing:.1em;line-height:1}
@@ -346,6 +348,25 @@ footer a:hover{color:var(--fg)}
 #ytwrap{position:fixed;left:-10000px;top:0;width:200px;height:200px;opacity:0;pointer-events:none}
 @media (max-width:560px){.player{left:16px;right:16px;width:auto}}
 
+/* ---------- cursor ---------- */
+@media (hover:hover) and (pointer:fine){
+  html.has-cursor,html.has-cursor *{cursor:none!important}
+  html.has-cursor input,html.has-cursor textarea{cursor:text!important}
+}
+.cur{position:fixed;left:0;top:0;z-index:1000;pointer-events:none;will-change:transform}
+.cur-star{width:14px;height:14px;margin:-7px 0 0 -7px;color:#fff;mix-blend-mode:difference;transition:width .25s var(--ease),height .25s var(--ease),margin .25s var(--ease)}
+.cur-star svg{width:100%;height:100%;display:block;transition:transform .35s var(--ease)}
+.cur-ring{width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid var(--accent);border-radius:50%;opacity:.55;transition:width .3s var(--ease),height .3s var(--ease),margin .3s var(--ease),opacity .3s,background .3s}
+.cur-ring span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:500 9.5px var(--mono);letter-spacing:.14em;color:var(--accent);opacity:0;transition:opacity .2s;white-space:nowrap}
+html.cur-hover .cur-ring{width:58px;height:58px;margin:-29px 0 0 -29px;opacity:1;background:var(--accent-soft)}
+html.cur-hover .cur-star svg{transform:rotate(45deg) scale(.7)}
+html.cur-label .cur-ring span{opacity:1}
+html.cur-label .cur-star{opacity:0}
+html.cur-down .cur-ring{width:24px;height:24px;margin:-12px 0 0 -12px}
+html.cur-hide .cur{opacity:0}
+.cur-dust{position:fixed;left:0;top:0;z-index:999;pointer-events:none;width:6px;height:6px;margin:-3px 0 0 -3px;color:var(--accent);opacity:0}
+.cur-dust svg{width:100%;height:100%;display:block}
+
 /* ---------- reveal ---------- */
 .rv{opacity:0;transform:translateY(18px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
 .rv.in{opacity:1;transform:none}
@@ -360,6 +381,7 @@ footer a:hover{color:var(--fg)}
 <!-- intro gate -->
 <div id="gate" role="dialog" aria-label="Enter site">
   <canvas id="stars3d" aria-hidden="true"></canvas>
+  <span id="starTag" aria-hidden="true"></span>
   <div class="bar mono fade"><span>ANUBHAV KUMAR — PORTFOLIO '26</span><span class="r"><span class="hide-xs">12.97° N · 77.59° E — BENGALURU</span>
     <button class="icon-btn" id="gateTheme" aria-label="Toggle theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button></span></div>
   <div class="gfoot fade">
@@ -371,7 +393,7 @@ footer a:hover{color:var(--fg)}
     <div class="enter">
       <span class="mono" style="color:var(--muted);letter-spacing:.14em">HOW DO YOU WANT TO ENTER?</span>
       <div class="btns">
-        <button class="gbtn primary" id="enterSound">
+        <button class="gbtn primary" id="enterSound" data-cursor="ENTER">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H2v6h4l5 4V5zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>
           Enter with sound</button>
         <button class="gbtn" id="enterMute">Enter without sound</button>
@@ -705,6 +727,10 @@ footer a:hover{color:var(--fg)}
   </section>
 </main>
 
+<!-- cursor -->
+<div class="cur cur-ring" id="curRing" aria-hidden="true"><span id="curLabel"></span></div>
+<div class="cur cur-star" id="curStar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c.6 6.2 5.8 11.4 12 12-6.2.6-11.4 5.8-12 12-.6-6.2-5.8-11.4-12-12C6.2 11.4 11.4 6.2 12 0z"/></svg></div>
+
 <!-- music -->
 <div id="ytwrap"><div id="yt"></div></div>
 <div class="player" id="player" aria-label="Music player">
@@ -796,7 +822,7 @@ setInterval(() => {
 
 /* ================= intro gate: 3D faceted star in a field of stars ================= */
 function starScene(cv, opts = {}) {
-  const T = window.THREE, hero = !!opts.hero;
+  const T = window.THREE, hero = !!opts.hero, intro = !hero;
   if (!T || !cv) return null;
   let renderer;
   try { renderer = new T.WebGLRenderer({canvas: cv, antialias: true, alpha: true}); } catch (e) { return null; }
@@ -820,7 +846,8 @@ function starScene(cv, opts = {}) {
   const gx = gc.getContext("2d"), grd = gx.createRadialGradient(64, 64, 0, 64, 64, 64);
   grd.addColorStop(0, "rgba(125,211,252,.45)"); grd.addColorStop(.2, "rgba(125,211,252,.16)"); grd.addColorStop(.5, "rgba(125,211,252,.04)"); grd.addColorStop(1, "rgba(125,211,252,0)");
   gx.fillStyle = grd; gx.fillRect(0, 0, 128, 128);
-  const glow = new T.Sprite(new T.SpriteMaterial({map: new T.CanvasTexture(gc), blending: T.AdditiveBlending, depthWrite: false, transparent: true}));
+  const glowTex = new T.CanvasTexture(gc);
+  const glow = new T.Sprite(new T.SpriteMaterial({map: glowTex, blending: T.AdditiveBlending, depthWrite: false, transparent: true}));
   glow.scale.set(11, 11, 1); glow.position.z = -1; cp.add(glow);
 
   // orbit rings
@@ -835,7 +862,7 @@ function starScene(cv, opts = {}) {
   const key = new T.DirectionalLight(0xffffff, .7); key.position.set(3, 4, 6); scene.add(key);
   const lights = [0x7dd3fc, 0xf9a8d4, 0xffd166].map(c => { const l = new T.PointLight(c, 2.2, 30); cp.add(l); return l; });
 
-  // the star field that gets "counted"
+  // background dust
   const N = 2400, sp = new Float32Array(N * 3);
   for (let i = 0; i < N; i++) {
     const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, rr = 8 + Math.pow(Math.random(), .6) * 70, s = Math.sqrt(1 - u * u);
@@ -847,48 +874,89 @@ function starScene(cv, opts = {}) {
   dg.addColorStop(0, "rgba(255,255,255,1)"); dg.addColorStop(.4, "rgba(255,255,255,.5)"); dg.addColorStop(1, "rgba(255,255,255,0)");
   dx.fillStyle = dg; dx.fillRect(0, 0, 32, 32);
   const dotTex = new T.CanvasTexture(dc);
-  const target = sp.slice();   // where each star ends up; sp holds live positions
-  const pg = new T.BufferGeometry(); pg.setAttribute("position", new T.BufferAttribute(sp, 3)); pg.setDrawRange(0, hero ? N : 0);
+  const pg = new T.BufferGeometry(); pg.setAttribute("position", new T.BufferAttribute(sp, 3));
   const fieldMat = new T.PointsMaterial({size: .32, map: dotTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending, color: 0xdbeafe});
   const field = new T.Points(pg, fieldMat);
   scene.add(field);
 
   // perspective floor grid, like a star chart (intro only)
   let grid = null;
-  if (!hero) {
+  if (intro) {
     grid = new T.GridHelper(120, 60, 0x1e3a4a, 0x10202a);
     grid.position.y = -4.2; grid.material.transparent = true; grid.material.opacity = .5; scene.add(grid);
   }
 
-  // intro: counted stars burst out from the centre to their place
-  const born = hero ? null : new Float64Array(N);
-  let revealed = 0, settledTo = 0;
+  /* ---------- intro: 100 stars counted one by one, joined into a constellation ---------- */
+  const C = 100, bright = [], parent = new Int16Array(C).fill(-1), lit = new Float64Array(C).fill(-1);
+  const home = [], goal = [];
+  let conLines = null, shock = null, flash = null, litCount = 0, formT = null, formCb = null, formed = hero, tag = opts.tag || null;
+  if (intro) {
+    // scatter, then order them as a wandering walk so the constellation grows like someone charting the sky
+    const pts = [];
+    let guard = 0;
+    while (pts.length < C && guard++ < 6000) {
+      const p = [(Math.random() * 2 - 1) * 10.5, -.2 + Math.random() * 5.6, -2 - Math.random() * 7];
+      if (Math.hypot(p[0], p[1] - .6) < 1.6) continue;              // keep the middle clear for the star
+      if (pts.every(q => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]) > 1.25)) pts.push(p);
+    }
+    while (pts.length < C) pts.push([(Math.random() * 2 - 1) * 10, 0 + Math.random() * 5, -3 - Math.random() * 6]);
+    const d2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+    const left = pts.slice(), order = [];
+    let cur = left.splice(left.reduce((bi, p, i) => (Math.hypot(p[0] + 4, p[1] - 2) < Math.hypot(left[bi][0] + 4, left[bi][1] - 2) ? i : bi), 0), 1)[0];
+    order.push(cur);
+    while (left.length) {
+      const from = Math.random() < .72 ? cur : order[Math.floor(Math.random() * order.length)];
+      let bi = 0; left.forEach((p, i) => { if (d2(p, from) < d2(left[bi], from)) bi = i; });
+      cur = left.splice(bi, 1)[0]; order.push(cur);
+    }
+    order.forEach((p, i) => {
+      home.push(new T.Vector3(...p));
+      if (i) { let bj = 0; for (let j = 1; j < i; j++) if (d2(order[j], p) < d2(order[bj], p)) bj = j; parent[i] = bj; }
+      // where it lands when the constellation collapses: a random point on the star's front facets
+      const f = Math.floor(Math.random() * 10), A = ring[f], B = ring[(f + 1) % 10];
+      let u = Math.random(), v = Math.random(); if (u + v > 1) { u = 1 - u; v = 1 - v; }
+      goal.push(new T.Vector3(A[0] * u + B[0] * v, A[1] * u + B[1] * v, D * (1 - u - v) + .05));
+      const s = new T.Sprite(new T.SpriteMaterial({map: dotTex, color: 0xffffff, blending: T.AdditiveBlending, depthWrite: false, transparent: true}));
+      s.position.copy(home[i]); s.visible = false; scene.add(s); bright.push(s);
+    });
+    conLines = new T.LineSegments(new T.BufferGeometry(), new T.LineBasicMaterial({color: 0x7dd3fc, transparent: true, opacity: .38, depthWrite: false}));
+    conLines.geometry.setAttribute("position", new T.BufferAttribute(new Float32Array((C - 1) * 6), 3));
+    conLines.geometry.setDrawRange(0, 0); conLines.frustumCulled = false; scene.add(conLines);
+    // shockwave + flash for the moment the star is born
+    shock = new T.Mesh(new T.RingGeometry(.985, 1, 160), new T.MeshBasicMaterial({color: 0x7dd3fc, transparent: true, opacity: 0, side: T.DoubleSide, depthWrite: false}));
+    shock.visible = false; scene.add(shock);
+    flash = new T.Sprite(new T.SpriteMaterial({map: glowTex, blending: T.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0}));
+    flash.visible = false; scene.add(flash);
+    // before it forms: only a small seed of light at the centre
+    holder.scale.setScalar(.0001); rings.forEach(m => m.scale.setScalar(.0001)); glow.scale.set(2.4, 2.4, 1);
+  }
 
-  // intro: shooting stars streaking across while counting
-  const shots = hero ? [] : Array.from({length: 7}, () => {
+  // intro: shooting stars streaking across
+  const shots = intro ? Array.from({length: 5}, () => {
     const g = new T.BufferGeometry();
     g.setAttribute("position", new T.BufferAttribute(new Float32Array(6), 3));
     g.setAttribute("color", new T.BufferAttribute(new Float32Array(6), 3));
     const l = new T.Line(g, new T.LineBasicMaterial({vertexColors: true, transparent: true, depthWrite: false, blending: T.AdditiveBlending}));
     l.visible = false; l.frustumCulled = false; scene.add(l);
     return {l, t: -1, sx: 0, sy: 0, sz: 0, dx: 0, dy: 0, v: 0};
-  });
-  let nextShot = 0, isDark = true;
-  const head = new T.Color(), tail = new T.Color(), bgc = new T.Color();
+  }) : [];
+  let nextShot = performance.now() + 900, isDark = true;
+  const head = new T.Color(), tail = new T.Color(), bgc = new T.Color(), tmp = new T.Vector3();
 
-  // counting: a random star flares up, and the count goes up by one
+  // hero: a random star flares up, and the count goes up by one
   const flashes = hero ? Array.from({length: 10}, () => {
     const s = new T.Sprite(new T.SpriteMaterial({map: dotTex, color: 0x7dd3fc, blending: T.AdditiveBlending, depthWrite: false, transparent: true}));
     s.visible = false; field.add(s); return {s, t: -1};
   }) : [];
   let nextFlash = 0;
 
-  let mx = 0, my = 0, alive = true, running = true, warpT = null, progress = 0, lookY = 0, baseZ = 11;
+  let mx = 0, my = 0, alive = true, running = true, warpT = null, progress = 0, lookY = 0, baseZ = 11, W = 1, H = 1;
   const onMove = e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; };
   addEventListener("pointermove", onMove);
   function size() {
     const w = cv.clientWidth, h = cv.clientHeight, narrow = w < 760;
     if (!w || !h) return;
+    W = w; H = h;
     renderer.setSize(w, h, false); cam.aspect = w / h;
     if (hero) {
       baseZ = 11; lookY = 0;
@@ -903,17 +971,29 @@ function starScene(cv, opts = {}) {
 
   function setTheme(dark) {
     isDark = dark;
+    const add = dark ? T.AdditiveBlending : T.NormalBlending, acc = dark ? 0x7dd3fc : 0x0284c7;
     if (grid) { grid.material.color.setHex(dark ? 0x10202a : 0xb9c7d2); grid.material.opacity = dark ? .5 : .35; }
-    shots.forEach(sh => { sh.l.material.blending = dark ? T.AdditiveBlending : T.NormalBlending; sh.l.material.needsUpdate = true; });
+    shots.forEach(sh => { sh.l.material.blending = add; sh.l.material.needsUpdate = true; });
     bgc.setHex(dark ? 0x0a0a0b : 0xf6f5f2);
-    fieldMat.blending = dark ? T.AdditiveBlending : T.NormalBlending;
+    fieldMat.blending = add;
     fieldMat.color.setHex(dark ? 0xdbeafe : 0x3f3f46); fieldMat.opacity = dark ? 1 : .75; fieldMat.needsUpdate = true;
     glow.visible = dark;
-    rings.forEach(m => m.material.color.setHex(dark ? 0x7dd3fc : 0x0284c7));
+    rings.forEach(m => m.material.color.setHex(acc));
     edges.material.color.setHex(dark ? 0xffffff : 0x111113); edges.material.opacity = dark ? .35 : .25;
-    flashes.forEach(f => { f.s.material.blending = dark ? T.AdditiveBlending : T.NormalBlending; f.s.material.color.setHex(dark ? 0x7dd3fc : 0x0284c7); f.s.material.needsUpdate = true; });
+    flashes.forEach(f => { f.s.material.blending = add; f.s.material.color.setHex(acc); f.s.material.needsUpdate = true; });
+    bright.forEach(s => { s.material.blending = add; s.material.color.setHex(dark ? 0xffffff : 0x0c4a6e); s.material.needsUpdate = true; });
+    if (conLines) { conLines.material.color.setHex(acc); conLines.material.opacity = dark ? .38 : .5; }
+    if (shock) shock.material.color.setHex(acc);
+    if (flash) flash.visible = dark && flash.visible;
   }
   setTheme(root.dataset.theme !== "light");
+
+  const ease = {
+    outCubic: k => 1 - Math.pow(1 - k, 3),
+    inOutCubic: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2,
+    outBack: k => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); }
+  };
+  const CONVERGE = 1150, STAGGER = 380, BURST = CONVERGE + STAGGER;
 
   const t0 = performance.now();
   let last = t0, spin = 0;
@@ -922,21 +1002,71 @@ function starScene(cv, opts = {}) {
     requestAnimationFrame(frame);
     if (!running) return;
     const t = (now - t0) / 1000, dt = Math.min(.05, (now - last) / 1000); last = now;
-    if (!hero) {
-      const n = Math.floor(N * progress);
-      for (; revealed < n; revealed++) born[revealed] = reduce ? -1e9 : now;
-      pg.setDrawRange(0, revealed);
-      // fly each newly counted star from near the camera out to its spot
-      let moved = false;
-      for (let i = settledTo; i < revealed; i++) {
-        const a = Math.min(1, (now - born[i]) / 1000), e = 1 - Math.pow(1 - a, 3), k = i * 3;
-        sp[k] = target[k] * (.04 + .96 * e); sp[k + 1] = target[k + 1] * (.04 + .96 * e); sp[k + 2] = 1 * (1 - e) + target[k + 2] * e;
-        moved = true;
-        if (a >= 1 && i === settledTo) settledTo++;
+
+    if (intro) {
+      spin += dt * 1.1 * Math.pow(1 - progress, 2);    // the sky turns while counting and settles at 100
+      fieldMat.opacity = (isDark ? 1 : .75) * (.25 + .75 * progress);
+      const fk = formT === null ? 0 : (now - formT);
+      // counted stars: ignite, twinkle, and (after 100) stream into the centre
+      let newest = -1;
+      for (let i = 0; i < litCount; i++) {
+        const s = bright[i], age = (now - lit[i]) / 1000;
+        if (formT === null) {
+          s.position.copy(home[i]);
+          const pulse = reduce ? 0 : (isDark ? 2.6 : 1.3) * Math.exp(-age * 6);
+          s.scale.setScalar(.34 * (1 + pulse) * (.82 + .18 * Math.sin(t * 3 + i * 1.7)));
+          s.material.opacity = 1 / (1 + pulse * (isDark ? .25 : .8));
+          newest = i;
+        } else {
+          const k = Math.min(1, Math.max(0, (fk - i * (STAGGER / C)) / CONVERGE)), e = ease.inOutCubic(k);
+          s.position.lerpVectors(home[i], goal[i], e);
+          s.scale.setScalar(.34 * (1 - e * .7) + .5 * Math.sin(k * Math.PI));
+          s.visible = fk < BURST + 60;
+        }
       }
-      if (moved) pg.attributes.position.needsUpdate = true;
-      spin += dt * 1.6 * Math.pow(1 - progress, 2);   // fast while counting, easing to a stop at 100
+      // constellation lines follow the stars; the newest one draws itself in
+      const L = conLines.geometry.attributes.position.array;
+      for (let i = 1; i < litCount; i++) {
+        const a = bright[parent[i]].position, b = bright[i].position;
+        const k = formT === null ? Math.min(1, (now - lit[i]) / 280) : 1;
+        const o = (i - 1) * 6;
+        L[o] = a.x; L[o + 1] = a.y; L[o + 2] = a.z;
+        L[o + 3] = a.x + (b.x - a.x) * k; L[o + 4] = a.y + (b.y - a.y) * k; L[o + 5] = a.z + (b.z - a.z) * k;
+      }
+      conLines.geometry.attributes.position.needsUpdate = true;
+      conLines.geometry.setDrawRange(0, Math.max(0, litCount - 1) * 2);
+      conLines.visible = formT === null || fk < BURST;
+      if (formT !== null) conLines.material.opacity = (isDark ? .38 : .5) * (1 - Math.min(1, fk / BURST) * .6);
+      // floating catalogue label on the newest star
+      if (tag) {
+        if (newest >= 0 && formT === null && !reduce) {
+          tmp.copy(bright[newest].position).project(cam);
+          tag.style.transform = `translate(${((tmp.x + 1) / 2 * W).toFixed(1)}px,${((1 - tmp.y) / 2 * H).toFixed(1)}px)`;
+          tag.textContent = "★ " + String(newest + 1).padStart(3, "0");
+          tag.style.opacity = 1;
+        } else tag.style.opacity = 0;
+      }
+      // camera eases in from further out while counting
+      if (warpT === null) cam.position.z = baseZ + 4.5 * (1 - ease.outCubic(progress));
+      // the birth: flash, shockwave, then the faceted star and its rings
+      if (formT !== null) {
+        const b = fk - BURST;
+        if (b >= 0 && b < 900) {
+          const k = b / 900;
+          shock.visible = true; shock.lookAt(cam.position); shock.scale.setScalar(.4 + ease.outCubic(k) * 5.2);
+          shock.material.opacity = (1 - k) * .9;
+          flash.visible = isDark; flash.scale.setScalar(3 + ease.outCubic(k) * 12); flash.material.opacity = (1 - k) * .9;
+        } else { shock.visible = false; flash.visible = false; }
+        const sk = Math.min(1, Math.max(0, (b + 120) / 850));
+        holder.scale.setScalar(Math.max(.0001, ease.outBack(sk)));
+        rings.forEach((m, i) => m.scale.setScalar(Math.max(.0001, ease.outCubic(Math.min(1, Math.max(0, (b - i * 110) / 1000))))));
+        glow.scale.setScalar(2.4 + 8.6 * ease.outCubic(Math.min(1, Math.max(0, b / 900))));
+        if (!formed && b > 650) { formed = true; formCb && formCb(); }
+      } else if (!reduce) {
+        glow.scale.setScalar(2.4 + .5 * Math.sin(t * 4));    // the seed breathes while we count
+      }
     }
+
     if (!reduce) {
       star.rotation.y = Math.sin(t * .45) * 1.05; star.rotation.x = Math.sin(t * .31) * .3; star.rotation.z = Math.sin(t * .2) * .15;
       holder.rotation.y += ((mx * .8) - holder.rotation.y) * .05; holder.rotation.x += ((my * .5) - holder.rotation.x) * .05;
@@ -944,28 +1074,28 @@ function starScene(cv, opts = {}) {
       rings.forEach((m, i) => { m.rotation.z = t * (.12 + i * .05) * (i % 2 ? -1 : 1); });
       lights.forEach((l, i) => { const a = t * .7 + i * 2.1; l.position.set(Math.cos(a) * 5, Math.sin(a * 1.3) * 3, Math.sin(a) * 5); });
       field.rotation.y = t * .015 + spin;
-      if (!hero) {
+      if (intro) {
         if (now > nextShot) {
           const sh = shots.find(s => s.t < 0);
           if (sh) {
             const dir = Math.random() < .5 ? -1 : 1;
-            sh.sx = (Math.random() * 24 - 12) - dir * 6; sh.sy = 3 + Math.random() * 7; sh.sz = -6 - Math.random() * 22;
+            sh.sx = (Math.random() * 24 - 12) - dir * 6; sh.sy = 3 + Math.random() * 7; sh.sz = -8 - Math.random() * 20;
             const ang = .35 + Math.random() * .35; sh.dx = Math.cos(ang) * dir; sh.dy = -Math.sin(ang);
             sh.v = 16 + Math.random() * 14; sh.t = now; sh.l.visible = true;
           }
-          nextShot = now + (progress < 1 ? 160 + Math.random() * 280 : 900 + Math.random() * 1800);
+          nextShot = now + 1100 + Math.random() * 2200;
         }
         shots.forEach(sh => {
           if (sh.t < 0) return;
           const age = (now - sh.t) / 1000, k = age / .9;
           if (k >= 1) { sh.t = -1; sh.l.visible = false; return; }
           const hx = sh.sx + sh.dx * sh.v * age, hy = sh.sy + sh.dy * sh.v * age, len = Math.min(1, age * 5) * 4.2;
-          const P = sh.l.geometry.attributes.position.array, C = sh.l.geometry.attributes.color.array;
+          const P = sh.l.geometry.attributes.position.array, Cc = sh.l.geometry.attributes.color.array;
           P[0] = hx; P[1] = hy; P[2] = sh.sz; P[3] = hx - sh.dx * len; P[4] = hy - sh.dy * len; P[5] = sh.sz;
           const f = Math.sin(k * Math.PI);
           if (isDark) { head.setHex(0xffffff).multiplyScalar(f); tail.setRGB(0, 0, 0); }
           else { head.setHex(0x0284c7).lerp(bgc, 1 - f); tail.copy(bgc); }
-          C[0] = head.r; C[1] = head.g; C[2] = head.b; C[3] = tail.r; C[4] = tail.g; C[5] = tail.b;
+          Cc[0] = head.r; Cc[1] = head.g; Cc[2] = head.b; Cc[3] = tail.r; Cc[4] = tail.g; Cc[5] = tail.b;
           sh.l.geometry.attributes.position.needsUpdate = true; sh.l.geometry.attributes.color.needsUpdate = true;
         });
       }
@@ -989,6 +1119,7 @@ function starScene(cv, opts = {}) {
       });
     } else {
       lights.forEach((l, i) => { const a = i * 2.1; l.position.set(Math.cos(a) * 5, 1, Math.sin(a) * 5); });
+      cam.lookAt(0, lookY, 0);
     }
     if (warpT !== null) {
       const w = Math.min(1, (now - warpT) / 1100), e = w * w * w;
@@ -999,7 +1130,18 @@ function starScene(cv, opts = {}) {
   }
   requestAnimationFrame(frame);
   return {
-    setProgress: p => { progress = p; },
+    // intro: light stars up to n (0..100)
+    count: n => {
+      const now = performance.now();
+      for (; litCount < Math.min(n, C); litCount++) { lit[litCount] = reduce ? now - 5000 : now; bright[litCount].visible = true; }
+      progress = litCount / C;
+    },
+    // intro: collapse the constellation into the star; cb fires once it has formed
+    form: cb => {
+      formCb = cb;
+      if (reduce) { formT = performance.now() - BURST - 2000; return; }
+      formT = performance.now();
+    },
     setTheme,
     warp: () => { warpT = performance.now(); },
     dispose: () => { alive = false; removeEventListener("pointermove", onMove); removeEventListener("resize", size); renderer.dispose(); }
@@ -1010,8 +1152,9 @@ let introStar = null;
 (() => {
   const gate = $("gate"), count = $("count"), load = $("load");
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-  scrollTo(0, 0);
-  const s3 = starScene($("stars3d"));
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);   // always enter at the top
+  scrollTo(0, 0); addEventListener("load", () => scrollTo(0, 0));
+  const s3 = starScene($("stars3d"), {tag: $("starTag")});
   introStar = s3;
   let entering = false;
   function enter(withSound) {
@@ -1027,14 +1170,18 @@ let introStar = null;
       setTimeout(() => { if (s3) s3.dispose(); introStar = null; gate.remove(); }, 1200);
     }, lift);
   }
-  const dur = reduce ? 1 : 2400, t0 = performance.now();
+  // count slowly at first so each star registers, then speed up
+  const dur = reduce ? 1 : 3900, t0 = performance.now() + (reduce ? 0 : 450);
   (function tick(now) {
-    const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
-    count.textContent = String(Math.round(e * 100)).padStart(3, "0");
+    const p = Math.max(0, Math.min(1, (now - t0) / dur)), e = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+    const n = Math.round(e * 100);
+    count.textContent = String(n).padStart(3, "0");
     load.style.transform = `scaleX(${e})`;
-    if (s3) s3.setProgress(e);
-    if (p < 1) requestAnimationFrame(tick); else gate.classList.add("ready");
-  })(t0);
+    if (s3) s3.count(n);
+    if (p < 1) requestAnimationFrame(tick);
+    else if (s3) s3.form(() => gate.classList.add("ready"));
+    else gate.classList.add("ready");
+  })(performance.now());
   $("enterSound").onclick = () => enter(true);
   $("enterMute").onclick = () => enter(false);
 })();
@@ -1078,6 +1225,50 @@ $("copy").onclick = async () => {
   catch (e) { location.href = "mailto:myacc5010@gmail.com"; }
   setTimeout(() => { $("copy").textContent = "Copy"; $("copy").classList.remove("done"); }, 1800);
 };
+
+/* ================= cursor: sparkle, lagging ring, star dust ================= */
+(() => {
+  if (!matchMedia("(hover:hover) and (pointer:fine)").matches) return;
+  root.classList.add("has-cursor");
+  const starEl = $("curStar"), ringEl = $("curRing"), label = $("curLabel");
+  const SPARK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c.6 6.2 5.8 11.4 12 12-6.2.6-11.4 5.8-12 12-.6-6.2-5.8-11.4-12-12C6.2 11.4 11.4 6.2 12 0z"/></svg>';
+  const dust = Array.from({length: 16}, () => { const d = document.createElement("div"); d.className = "cur-dust"; d.innerHTML = SPARK; document.body.appendChild(d); return d; });
+  let x = innerWidth / 2, y = innerHeight / 2, rx = x, ry = y, lx = x, ly = y, di = 0, acc = 0, seen = false;
+  root.classList.add("cur-hide");
+  addEventListener("pointermove", e => {
+    x = e.clientX; y = e.clientY;
+    if (!seen) { seen = true; rx = x; ry = y; root.classList.remove("cur-hide"); }
+    // drop a little star behind fast movement
+    acc += Math.hypot(x - lx, y - ly); lx = x; ly = y;
+    if (acc > 38 && !reduce) {
+      acc = 0;
+      const d = dust[di++ % dust.length], s = 3 + Math.random() * 5;
+      d.style.width = d.style.height = s + "px";
+      d.animate([
+        {transform: `translate(${x}px,${y}px) rotate(0deg) scale(1)`, opacity: .9},
+        {transform: `translate(${x + (Math.random() - .5) * 30}px,${y + 14 + Math.random() * 22}px) rotate(${(Math.random() - .5) * 180}deg) scale(.2)`, opacity: 0}
+      ], {duration: 700 + Math.random() * 400, easing: "cubic-bezier(.2,.7,.2,1)"});
+    }
+  }, {passive: true});
+  document.addEventListener("pointerleave", () => root.classList.add("cur-hide"));
+  document.addEventListener("pointerenter", () => { if (seen) root.classList.remove("cur-hide"); });
+  addEventListener("pointerdown", () => root.classList.add("cur-down"));
+  addEventListener("pointerup", () => root.classList.remove("cur-down"));
+  const HOVER = "a,button,[role=button],.row,.chip,.feature .viz,.lcd";
+  document.addEventListener("pointerover", e => {
+    const el = e.target.closest && e.target.closest(HOVER);
+    root.classList.toggle("cur-hover", !!el);
+    const txt = el && (el.dataset.cursor || (el.matches(".feature .viz") ? "LIVE" : el.matches(".lcd") ? "PLAY" : ""));
+    root.classList.toggle("cur-label", !!txt);
+    label.textContent = txt || "";
+  });
+  (function loop() {
+    rx += (x - rx) * .16; ry += (y - ry) * .16;
+    starEl.style.transform = `translate(${x}px,${y}px)`;
+    ringEl.style.transform = `translate(${rx}px,${ry}px)`;
+    requestAnimationFrame(loop);
+  })();
+})();
 
 /* ================= more projects ================= */
 const GH = "https://github.com/dingdongkkk/";
