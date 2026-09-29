@@ -347,6 +347,15 @@ footer a:hover{color:var(--fg)}
 @media (max-width:560px){.player{left:16px;right:16px;width:auto}}
 @media (prefers-reduced-motion:reduce){.lcd .scroll,#lcdTime,.lcd .seg i{animation:none!important}}
 #ytwrap{position:fixed;left:-10000px;top:0;width:200px;height:200px;opacity:0;pointer-events:none}
+/* fallback for browsers (Safari) that won't start sound from a script: show the real player for one tap */
+#ytwrap.ask{left:auto;top:auto;right:16px;bottom:176px;z-index:61;width:300px;height:auto;opacity:1;pointer-events:auto;padding:12px;border-radius:16px;border:1px solid var(--line-2);background:var(--bg-2);box-shadow:var(--shadow);animation:askin .5s var(--ease)}
+#ytwrap .askhead{display:none;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:13px;line-height:1.45;color:var(--muted)}
+#ytwrap .askhead b{color:var(--fg);font-weight:500}
+#ytwrap.ask .askhead{display:flex}
+#ytwrap .askhead button{margin-left:auto;flex:none;width:26px;height:26px;border-radius:50%;border:1px solid var(--line-2);background:none;cursor:pointer;color:var(--muted)}
+#ytwrap.ask iframe{display:block;width:100%!important;height:200px!important;border-radius:10px}
+@keyframes askin{from{opacity:0;transform:translateY(10px)}}
+@media (max-width:560px){#ytwrap.ask{left:16px;right:16px;width:auto;bottom:168px}}
 @media (max-width:560px){.player{left:16px;right:16px;width:auto}}
 
 /* ---------- cursor ---------- */
@@ -733,7 +742,10 @@ html.cur-hide .cur{opacity:0}
 <div class="cur cur-star" id="curStar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c.6 6.2 5.8 11.4 12 12-6.2.6-11.4 5.8-12 12-.6-6.2-5.8-11.4-12-12C6.2 11.4 11.4 6.2 12 0z"/></svg></div>
 
 <!-- music -->
-<div id="ytwrap"><div id="yt"></div></div>
+<div id="ytwrap" role="dialog" aria-label="Start the music">
+  <div class="askhead"><span>Your browser needs one tap to play sound. <b>Tap the video</b> — it starts right at the drop.</span><button id="askClose" aria-label="Close">✕</button></div>
+  <div id="yt"></div>
+</div>
 <div class="player" id="player" aria-label="Music player">
   <div class="lcd" id="lcd" role="button" tabindex="0" aria-label="Play or pause Counting Stars">
     <div class="l1"><span id="lcdState">■ STOPPED</span><span>TRK 01</span></div>
@@ -776,6 +788,10 @@ window.onYouTubeIframeAPIReady = () => {
       onReady: () => { ytReady = true; if (wantPlay) startMusic(); },
       onStateChange: e => {
         if (e.data === YT.PlayerState.ENDED) { yt.seekTo(DROP, true); yt.playVideo(); }
+        if (e.data === YT.PlayerState.PLAYING && $("ytwrap").classList.contains("ask")) {
+          yt.unMute(); clearInterval(fadeT); yt.setVolume(80);
+          setTimeout(() => $("ytwrap").classList.remove("ask"), 500);   // got the tap, tuck the player away again
+        }
         setPlayingUI(e.data === YT.PlayerState.PLAYING || e.data === YT.PlayerState.BUFFERING);
       },
       onError: () => { $("lcdState").textContent = "✕ ERROR"; }
@@ -791,11 +807,23 @@ function fadeTo(target, ms) {
     yt.setVolume(Math.round(v));
   }, 50);
 }
+let askT = null;
 function startMusic() {
   if (!ytReady) { wantPlay = true; return; }
   wantPlay = false;
   yt.unMute(); yt.setVolume(0); yt.playVideo(); fadeTo(80, 1800);
+  // Safari won't let a page start sound inside the YouTube frame; if nothing is audible soon, ask for one tap on the player
+  clearTimeout(askT);
+  askT = setTimeout(() => {
+    const st = yt.getPlayerState();
+    if ((st !== YT.PlayerState.PLAYING && st !== YT.PlayerState.BUFFERING) || yt.isMuted()) askForTap();
+  }, 1600);
 }
+function askForTap() {
+  clearInterval(fadeT); yt.unMute(); yt.setVolume(80);
+  $("ytwrap").classList.add("ask");
+}
+$("askClose").onclick = () => $("ytwrap").classList.remove("ask");
 function setPlayingUI(on) {
   player.classList.toggle("playing", on);
   picon.innerHTML = on ? ICON_PAUSE : ICON_PLAY;
