@@ -33,8 +33,6 @@
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .3s,color .3s}
 body.locked{overflow:hidden}
-/* nothing behind the intro gets painted until you enter — avoids GPU layers bleeding through the 3D scene */
-body.locked>:not(#gate):not(.cur):not(.cur-dust):not(#ytwrap):not(script){visibility:hidden}
 a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit}
 ::selection{background:var(--accent);color:var(--bg)}
@@ -271,7 +269,7 @@ h2 em{color:var(--muted)}
 .job{position:relative;display:grid;grid-template-columns:1fr auto;gap:4px 24px;padding-bottom:48px}
 .job:last-child{padding-bottom:0}
 .job::before{content:"";position:absolute;left:-32px;top:7px;width:11px;height:11px;border-radius:50%;background:var(--bg);border:1px solid var(--muted)}
-.job.cur::before{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px var(--accent-soft)}
+.job.current::before{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px var(--accent-soft)}
 .job h3{font-size:18px;font-weight:500;letter-spacing:-.01em}
 .job h3 span{color:var(--muted);font-weight:400}
 .job .when{color:var(--muted)}
@@ -636,7 +634,7 @@ html.cur-hide .cur{opacity:0}
       <div class="xp">
         <div></div>
         <div class="tl">
-          <div class="job cur rv">
+          <div class="job current rv">
             <h3>Web Developer Intern <span>· Internloom</span></h3>
             <span class="when mono">Jul 2026 — Now</span>
             <span class="role">Migrating a live product's API, database and auth</span>
@@ -649,7 +647,7 @@ html.cur-hide .cur{opacity:0}
             </ul>
             <div class="chips"><span class="chip">Next.js</span><span class="chip">TypeScript</span><span class="chip">Supabase</span><span class="chip">Postgres · RLS</span><span class="chip">Drizzle</span></div>
           </div>
-          <div class="job cur rv">
+          <div class="job current rv">
             <h3>Senior Technical Coordinator <span>· &lt;CodeIO/&gt;, CSE BMSCE</span></h3>
             <span class="when mono">Nov 2025 — Now</span>
             <span class="role">Web development. Junior Coordinator Nov 2025 – Sep 2026, promoted to Senior in Sep 2026.</span>
