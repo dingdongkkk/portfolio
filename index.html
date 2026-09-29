@@ -73,8 +73,8 @@ button{font:inherit;color:inherit}
 
 /* ---------- nav ---------- */
 .progress{position:fixed;top:0;left:0;right:0;height:2px;z-index:70;background:var(--accent);transform-origin:left;transform:scaleX(0)}
-nav{position:fixed;inset:0 0 auto;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:color-mix(in srgb,var(--bg) 72%,transparent);border-bottom:1px solid transparent;transition:border-color .3s}
-nav.scrolled{border-color:var(--line)}
+nav{position:fixed;inset:0 0 auto;z-index:50;background:color-mix(in srgb,var(--bg) 72%,transparent);border-bottom:1px solid transparent;transition:border-color .3s}
+nav.scrolled{border-color:var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
 .logo{font-family:var(--serif);font-size:23px;letter-spacing:-.01em}
 .logo i{color:var(--accent);font-style:normal}
@@ -770,6 +770,11 @@ const root = document.documentElement;
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const DPR = Math.min(devicePixelRatio || 1, 2);
 const css = v => getComputedStyle(root).getPropertyValue(v).trim();
+const setText = (el, t) => { if (el.textContent !== t) el.textContent = t; };
+// theme colours cached for canvases; refreshed on theme switch instead of read every frame
+const pal = {};
+const readPal = () => { pal.faint = css("--faint"); pal.accent = css("--accent"); };
+readPal();
 const $ = id => document.getElementById(id);
 const whenVisible = (el, fn) => new IntersectionObserver(([e]) => fn(e.isIntersecting), {threshold:.05}).observe(el);
 
@@ -855,7 +860,8 @@ function starScene(cv, opts = {}) {
   if (!T || !cv) return null;
   let renderer;
   try { renderer = new T.WebGLRenderer({canvas: cv, antialias: true, alpha: true}); } catch (e) { return null; }
-  renderer.setPixelRatio(DPR);
+  let pr = Math.min(DPR, 1.5);   // retina at 1.5x is indistinguishable on a moving scene and ~45% fewer pixels than 2x
+  renderer.setPixelRatio(pr);
   const scene = new T.Scene(), cam = new T.PerspectiveCamera(38, 1, .1, 400);
   cam.position.set(0, 0, 11);
   const cp = new T.Group(); scene.add(cp);   // centrepiece: star, glow, rings, lights
@@ -1025,12 +1031,19 @@ function starScene(cv, opts = {}) {
   const CONVERGE = 1150, STAGGER = 380, BURST = CONVERGE + STAGGER;
 
   const t0 = performance.now();
-  let last = t0, spin = 0;
+  let last = t0, spin = 0, frames = 0, slow = 0;
   function frame(now) {
     if (!alive) return;
     requestAnimationFrame(frame);
-    if (!running) return;
-    const t = (now - t0) / 1000, dt = Math.min(.05, (now - last) / 1000); last = now;
+    if (!running || (hero && !root.classList.contains("entered"))) { last = now; return; }
+    const t = (now - t0) / 1000, dt = Math.min(.05, (now - last) / 1000);
+    // adaptive quality: if frames keep running long, render fewer pixels
+    if (now - last < 250) { slow += (now - last > 24 ? 1 : 0); frames++; }
+    last = now;
+    if (frames >= 90) {
+      if (slow > 30 && pr > .75) { pr = Math.max(.75, pr - .25); renderer.setPixelRatio(pr); size(); }
+      frames = slow = 0;
+    }
 
     if (intro) {
       spin += dt * 1.1 * Math.pow(1 - progress, 2);    // the sky turns while counting and settles at 100
@@ -1220,6 +1233,7 @@ function toggleTheme() {
   root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";
   try { localStorage.setItem("theme", root.dataset.theme); } catch (e) {}
   const dark = root.dataset.theme !== "light";
+  readPal();
   drawCal && drawCal();
   heroStar && heroStar.setTheme(dark);
   introStar && introStar.setTheme(dark);
@@ -1227,15 +1241,18 @@ function toggleTheme() {
 $("theme").onclick = toggleTheme;
 if ($("gateTheme")) $("gateTheme").onclick = toggleTheme;
 const nav = $("nav"), bar = $("progress");
-const links = [...document.querySelectorAll(".links>a[href^='#']")];
-addEventListener("scroll", () => {
+const links = [...document.querySelectorAll(".links>a[href^='#']")].map(a => ({a, s: document.querySelector(a.getAttribute("href"))}));
+let scrollQueued = false, activeLink = null;
+function onScrollFrame() {
+  scrollQueued = false;
   nav.classList.toggle("scrolled", scrollY > 20);
   const h = document.documentElement.scrollHeight - innerHeight;
   bar.style.transform = `scaleX(${h > 0 ? scrollY / h : 0})`;
   let cur = null;
-  for (const a of links) { const s = document.querySelector(a.getAttribute("href")); if (s && s.getBoundingClientRect().top < innerHeight * .4) cur = a; }
-  links.forEach(a => a.classList.toggle("active", a === cur));
-}, {passive: true});
+  for (const l of links) if (l.s && l.s.getBoundingClientRect().top < innerHeight * .4) cur = l.a;
+  if (cur !== activeLink) { activeLink = cur; links.forEach(l => l.a.classList.toggle("active", l.a === cur)); }
+}
+addEventListener("scroll", () => { if (!scrollQueued) { scrollQueued = true; requestAnimationFrame(onScrollFrame); } }, {passive: true});
 const tick = () => $("clock").textContent = new Date().toLocaleTimeString("en-GB", {timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit"}) + " IST";
 tick(); setInterval(tick, 10000);
 
@@ -1291,17 +1308,21 @@ $("copy").onclick = async () => {
   document.addEventListener("pointerover", e => {
     const t = e.target.closest ? e.target : null; if (!t) return;
     const lab = t.closest(LABEL), sn = t.closest(SNAP);
-    if (sn && sn.getBoundingClientRect().width < 420) { snap = sn; mode = "snap"; }
+    if (sn && sn.getBoundingClientRect().width < 420) { snap = sn; mode = "snap"; measureSnap(); }
     else if (lab) { snap = null; mode = "label"; label.textContent = lab.dataset.cursor || (lab.matches(".lcd") ? "PLAY" : lab.matches(".row") ? "VIEW" : "LIVE"); }
     else { snap = null; mode = ""; }
     if (mode === "snap" && sn.dataset.cursor) { mode = "label"; label.textContent = sn.dataset.cursor; }
     root.classList.toggle("cur-snap", mode === "snap");
     root.classList.toggle("cur-label", mode === "label");
   });
+  let snapRect = null, snapR = 6;
+  function measureSnap() { if (!snap) return; snapRect = snap.getBoundingClientRect(); snapR = parseFloat(getComputedStyle(snap).borderTopLeftRadius) || 6; }
+  addEventListener("scroll", () => { if (mode === "snap") measureSnap(); }, {passive: true});
   const k = reduce ? 1 : .2;
+  let lastKey = "";
   (function loop() {
-    if (mode === "snap" && snap && snap.isConnected) {
-      const r = snap.getBoundingClientRect(), br = parseFloat(getComputedStyle(snap).borderTopLeftRadius) || 6;
+    if (mode === "snap" && snap && snap.isConnected && snapRect) {
+      const r = snapRect, br = snapR;
       // hug the element, leaning a touch toward the pointer
       goal.x = r.left + r.width / 2 + (x - (r.left + r.width / 2)) * .12;
       goal.y = r.top + r.height / 2 + (y - (r.top + r.height / 2)) * .12;
@@ -1311,10 +1332,15 @@ $("copy").onclick = async () => {
     } else {
       goal.x = x; goal.y = y; goal.w = goal.h = down ? 22 : 34; goal.r = goal.w / 2;
     }
-    for (const p of ["x", "y", "w", "h", "r"]) ring[p] += (goal[p] - ring[p]) * k;
-    ringEl.style.width = ring.w + "px"; ringEl.style.height = ring.h + "px"; ringEl.style.borderRadius = ring.r + "px";
-    ringEl.style.transform = `translate(${ring.x - ring.w / 2}px,${ring.y - ring.h / 2}px)`;
-    starEl.style.transform = `translate(${x - 7}px,${y - 7}px)`;
+    let moving = false;
+    for (const p of ["x", "y", "w", "h", "r"]) { const d = goal[p] - ring[p]; if (Math.abs(d) > .05) { ring[p] += d * k; moving = true; } else ring[p] = goal[p]; }
+    const key = x + "," + y;
+    if (moving || key !== lastKey) {   // nothing to do while the pointer and ring are at rest
+      lastKey = key;
+      ringEl.style.width = ring.w + "px"; ringEl.style.height = ring.h + "px"; ringEl.style.borderRadius = ring.r + "px";
+      ringEl.style.transform = `translate(${ring.x - ring.w / 2}px,${ring.y - ring.h / 2}px)`;
+      starEl.style.transform = `translate(${x - 7}px,${y - 7}px)`;
+    }
     requestAnimationFrame(loop);
   })();
 })();
@@ -1407,9 +1433,9 @@ let heroStar = null;
     lastPhase = phase;
     if (!reduce) step(phase); else if (water[0] === 0) for (let k = 0; k < 400; k++) step(.3);
     const mins = Math.floor(phase * 180);
-    simt.textContent = String(Math.floor(mins / 60)).padStart(2, "0") + ":" + String(mins % 60).padStart(2, "0");
+    setText(simt, String(Math.floor(mins / 60)).padStart(2, "0") + ":" + String(mins % 60).padStart(2, "0"));
     x.clearRect(0, 0, W, H);
-    const fg = css("--faint"), ac = css("--accent"), g = cell * .14, r = Math.max(1.5, cell * .18);
+    const fg = pal.faint, ac = pal.accent, g = cell * .14, r = Math.max(1.5, cell * .18);
     for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
       const k = j * COLS + i, w = water[k];
       const px = ox + i * cell + g / 2, py = oy + j * cell + g / 2, s = cell - g;
@@ -1444,7 +1470,8 @@ let heroStar = null;
   const octo = [["011110","111111","101101","111111","101010"],["011110","111111","101101","111111","010101"]];
   const spr = (m, px, py, col) => { x.fillStyle = col; m.forEach((r, j) => [...r].forEach((b, i) => { if (b === "1") x.fillRect(Math.round(px) + i, Math.round(py) + j, 1, 1); })); };
   whenVisible(box, v => visible = v);
-  let frame = 0;
+  let frame = 0, flashOn = false;
+  const keysEl = $("keys"), distEl = $("dist"), flashEl = $("flash");
   function draw() {
     requestAnimationFrame(draw);
     if (!visible) return;
@@ -1462,15 +1489,15 @@ let heroStar = null;
     keysAt.forEach((k, i) => { if (!got[i] && frame % 30 < 22) { x.fillStyle = KEY; x.fillRect(k[0] - 1, k[1] - 1, 3, 2); } });
     const [px, py] = at(s);
     keysAt.forEach((k, i) => { if (!got[i] && Math.hypot(px - k[0], py - k[1]) < 1.5) got[i] = true; });
-    const n = got.filter(Boolean).length; $("keys").textContent = n + "/3";
+    const n = got.filter(Boolean).length; setText(keysEl, n + "/3");
     if (all && Math.hypot(px - 8, py - 52) < 1 && s > 10) { flashT = 70; got = [false,false,false]; s = 0; }
     const chase = 26 + Math.sin(frame / 60) * 6;
     const [ox2, oy2] = at(s - chase);
     spr(octo[(frame >> 3) & 1], ox2 - 3, oy2 - 2, OCTO);
     spr(diver, px - 2, py - 2, YOU);
-    $("dist").textContent = String(Math.round(chase / 2)).padStart(2, "0");
+    setText(distEl, String(Math.round(chase / 2)).padStart(2, "0"));
     if (flashT > 0) flashT--;
-    $("flash").classList.toggle("on", flashT > 0 && flashT % 20 < 14);
+    const fl = flashT > 0 && flashT % 20 < 14; if (fl !== flashOn) { flashOn = fl; flashEl.classList.toggle("on", fl); }
   }
   requestAnimationFrame(draw);
 })();
